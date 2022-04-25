@@ -15,15 +15,17 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--p_pheno",help="path to pheno file",dest='p_pheno',
                         default='/home/harveyaa/projects/def-pbellec/harveyaa/data/pheno_01-12-21.csv')
-    parser.add_argument("--p_conn",help="path to connectomes file",dest='p_pheno',
+    parser.add_argument("--p_conn",help="path to connectomes file",dest='p_conn',
                         default='/home/harveyaa/projects/def-pbellec/harveyaa/data/connectomes_01-12-21.csv')
     parser.add_argument("--p_ids",help="path to dataset ids",dest='p_ids')
     parser.add_argument("--p_out",help="path to outputs",dest='p_out')
     args = parser.parse_args()
 
     # Load data
+    print('Loading data...')
     pheno = pd.read_csv(args.p_pheno,index_col=0)
     conn = pd.read_csv(args.p_conn,index_col=0)
+    print('Done!')
 
     # Define cases
     cases = ['SZ',
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     clfs = {'SVC_1':SVC(C=1,class_weight='balanced'),
             'SVC_10':SVC(C=10,class_weight='balanced'),
             'SVC_100':SVC(C=100,class_weight='balanced'),
-            'LR':LogisticRegression(class_weight='balanced'),
+            #'LR':LogisticRegression(class_weight='balanced'),
             'kNN_5':KNeighborsClassifier()}
 
     #############
@@ -60,10 +62,11 @@ if __name__ == "__main__":
             mean_acc_conf[clf] = []
             mean_acc_conn[clf] = []
     
+    print('Beginning prediction...')
     for case in cases:
         print(case)
         # Load ids
-        dataset_ids = pd.read_csv(os.path.join(p_ids,f"{case}.csv"),index_col=0)
+        dataset_ids = pd.read_csv(os.path.join(args.p_ids,f"{case}.csv"),index_col=0)
 
         # Confound matrix
         df = pheno[pheno.index.isin(dataset_ids.index)]
@@ -104,14 +107,17 @@ if __name__ == "__main__":
         for clf in clfs:
             mean_acc_conf[clf].append(np.mean(acc_conf[clf]))
             mean_acc_conn[clf].append(np.mean(acc_conn[clf]))
-    
+    print('Done!')
+
     ###########
     # RESULTS #
     ###########
+    print('Collecting results...')
     results = {}
     for clf in clfs:
         results[clf] = pd.DataFrame([mean_acc_conf[clf],mean_acc_conn[clf]],columns=cases,index=['conf','conn']).transpose()
     
+    print('Generating plot...')
     title = 'Confound Accuracy'
     xlabels=None
 
@@ -154,9 +160,10 @@ if __name__ == "__main__":
         handles, _ = ax[-1].get_legend_handles_labels()
         labels = clfs.keys()
 
-        ax[0].set_ylabel('Accuracy')
-        fig.legend(handles, labels, loc=(0.1,0.2))
-        ax[int(len(cases)/2)].set_title(title)
-        plt.tight_layout()
-        plt.subplots_adjust(wspace=0)
-        plt.savefig(os.path.join(args.p_out,'conf_acc.png'),dpi=300)
+    ax[0].set_ylabel('Accuracy')
+    fig.legend(handles, labels, loc=(0.1,0.2))
+    ax[int(len(cases)/2)].set_title(title)
+    plt.tight_layout()
+    plt.subplots_adjust(wspace=0)
+    plt.savefig(os.path.join(args.p_out,'conf_acc.png'),dpi=300)
+    print('Done!')
