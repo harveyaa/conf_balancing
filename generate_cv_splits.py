@@ -74,14 +74,20 @@ if __name__ == "__main__":
     parser.add_argument("--p_ids",help="path to dataset ids",
                         default='/home/harveyaa/projects/def-pbellec/harveyaa/data/ids/datasets')
     parser.add_argument("--p_out",help="path to outputs")
-    parser.add_argument("--plim",help="p value cutoff for class balancing",default=0.05,type=float)
-    parser.add_argument("--min_train",help="min proportion of training sample",default=0.7,type=float)
+    parser.add_argument("--plim",help="p value cutoff for class balancing",default=5,type=float)
+    parser.add_argument("--min_train",help="min proportion of training sample",default=70,type=float)
     parser.add_argument("--min_members",help="min number of cases in test set",default=3,type=int)
     parser.add_argument("--generate_figures",help="plots of test folds",action='store_true')
     args = parser.parse_args()
 
+    print('#############')
+    print('# CV SPLITS #')
+    print('#############\n')
+
     # LOAD DATA
+    print('Loading data...')
     pheno = pd.read_csv(args.p_pheno,index_col=0)
+    print('Done!\n')
 
     conf = ['AGE',
             'SEX',
@@ -108,6 +114,7 @@ if __name__ == "__main__":
     sel_ids = dict(zip(cases,sel_ids))
 
     # GENERATE CV SPLITS
+    print('Generating CV splits...')
     temp_dir = tempfile.TemporaryDirectory()
     cv_ids = []
     for case in cases:
@@ -116,12 +123,14 @@ if __name__ == "__main__":
         conf,
         pheno,
         temp_dir.name,
-        plim=args.plim,
+        plim=args.plim/100,
         force_save=False,
-        min_train=args.min_train,
+        min_train=args.min_train/100,
         min_members=args.min_members)
+    print('Done!\n')
 
     # CLEAN UP .txt -> .csv
+    print('Cleaning up...')
     tag = '{}.txt'
     tag_split = '{}_test_set_{}.txt'
 
@@ -139,8 +148,10 @@ if __name__ == "__main__":
         dataset_ids[case] = pheno[pheno.index.isin(dataset_ids.index)][case].values.astype(int)
         dataset_ids.to_csv(os.path.join(args.p_out,f"{case}.csv"))
         dfs.append(dataset_ids)
+    print('Done!\n')
 
     # REPORT
+    print('Avg training set sizes...')
     for df in dfs:
         print(df.columns[-1])
         train_sizes = []
@@ -149,9 +160,11 @@ if __name__ == "__main__":
                 ts = 1-df[f'fold_{i}'].sum()/len(df)
                 train_sizes.append(ts)
         print('Avg train %: ',np.mean(train_sizes))
+    print('\n')
     
     # PLOT
     if args.generate_figures:
+        print('Generating figures...')
         for case in cases:
             all_ids = sel_ids[case]
 
@@ -194,5 +207,6 @@ if __name__ == "__main__":
             plt.tight_layout()
             plt.subplots_adjust(wspace=0.1,hspace=0.2)
             plt.savefig(os.path.join(args.p_out,f"{case}_train.png"),dpi=300)
+        print('Done!\n')
     
     temp_dir.cleanup()

@@ -21,6 +21,10 @@ if __name__ == "__main__":
     parser.add_argument("--p_out",help="path to outputs",dest='p_out')
     args = parser.parse_args()
 
+    print('#############')
+    print('# BENCHMARK #')
+    print('#############\n')
+
     # Load data
     print('Loading data...')
     pheno = pd.read_csv(args.p_pheno,index_col=0)
@@ -66,48 +70,51 @@ if __name__ == "__main__":
     for case in cases:
         print(case)
         # Load ids
-        dataset_ids = pd.read_csv(os.path.join(args.p_ids,f"{case}.csv"),index_col=0)
+        if os.path.exists(os.path.join(args.p_ids,f"{case}.csv")):
+            dataset_ids = pd.read_csv(os.path.join(args.p_ids,f"{case}.csv"),index_col=0)
 
-        # Confound matrix
-        df = pheno[pheno.index.isin(dataset_ids.index)]
-        X = pd.get_dummies(df[conf],columns=['SEX','SITE'],drop_first=True)
+            # Confound matrix
+            df = pheno[pheno.index.isin(dataset_ids.index)]
+            X = pd.get_dummies(df[conf],columns=['SEX','SITE'],drop_first=True)
 
-        # Connectomes
-        X_conn = conn[conn.index.isin(dataset_ids.index)]
+            # Connectomes
+            X_conn = conn[conn.index.isin(dataset_ids.index)]
 
-        # Labels
-        y = dataset_ids[case]
+            # Labels
+            y = dataset_ids[case]
 
-        acc_conf = {}
-        acc_conn = {}
-        for clf in clfs:
-            acc_conf[clf] = []
-            acc_conn[clf] = []
-            
-        for i in range(5):
+            acc_conf = {}
+            acc_conn = {}
             for clf in clfs:
-                if f'fold_{i}' in dataset_ids.columns:
-                    # Test set ids for fold
-                    test_mask = (dataset_ids[f'fold_{i}'] == 1).to_numpy()
+                acc_conf[clf] = []
+                acc_conn[clf] = []
+                
+            for i in range(5):
+                for clf in clfs:
+                    if f'fold_{i}' in dataset_ids.columns:
+                        # Test set ids for fold
+                        test_mask = (dataset_ids[f'fold_{i}'] == 1).to_numpy()
 
-                    # Train/test split
-                    X_train, X_test = X[~test_mask], X[test_mask]
-                    X_conn_train, X_conn_test = X_conn[~test_mask], X_conn[test_mask]
-                    y_train, y_test = y[~test_mask], y[test_mask]
+                        # Train/test split
+                        X_train, X_test = X[~test_mask], X[test_mask]
+                        X_conn_train, X_conn_test = X_conn[~test_mask], X_conn[test_mask]
+                        y_train, y_test = y[~test_mask], y[test_mask]
 
-                    # Pred from confounds
-                    clfs[clf].fit(X_train,y_train)
-                    pred = clfs[clf].predict(X_test)
-                    acc_conf[clf].append(accuracy_score(y_test,pred))
+                        # Pred from confounds
+                        clfs[clf].fit(X_train,y_train)
+                        pred = clfs[clf].predict(X_test)
+                        acc_conf[clf].append(accuracy_score(y_test,pred))
 
-                    # Pred from connectomes
-                    clfs[clf].fit(X_conn_train,y_train)
-                    pred_conn = clfs[clf].predict(X_conn_test)
-                    acc_conn[clf].append(accuracy_score(y_test,pred_conn))
+                        # Pred from connectomes
+                        clfs[clf].fit(X_conn_train,y_train)
+                        pred_conn = clfs[clf].predict(X_conn_test)
+                        acc_conn[clf].append(accuracy_score(y_test,pred_conn))
+        else:
+            print('No CV folds found.')
         for clf in clfs:
             mean_acc_conf[clf].append(np.mean(acc_conf[clf]))
             mean_acc_conn[clf].append(np.mean(acc_conn[clf]))
-    print('Done!')
+    print('Done!\n')
 
     ###########
     # RESULTS #
@@ -166,4 +173,4 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.subplots_adjust(wspace=0)
     plt.savefig(os.path.join(args.p_out,'conf_acc.png'),dpi=300)
-    print('Done!')
+    print('Done!\n')
