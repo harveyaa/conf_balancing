@@ -146,9 +146,9 @@ if __name__ == "__main__":
             else:
                 mfc = colors[i]
                 ls = '-'
-            #ax[j].plot(i,conn_acc,marker='o',color=colors[i],ms=4,markerfacecolor=mfc)
+            ax[j].plot(i,conn_acc,marker='o',color=colors[i],ms=4,markerfacecolor=mfc)
             ax[j].plot(i,conf_acc,marker='o',color=colors[i],ms=4,markerfacecolor=mfc,label=clf)
-            #ax[j].plot((i,i),(conf_acc,conn_acc),color=colors[i],ls=ls,label=clf)
+            ax[j].plot((i,i),(conf_acc,conn_acc),color=colors[i],ls=ls,label=clf)
             ax[j].set_xticklabels([])
             ax[j].set_xticks([])
             ax[j].set_xlim(-0.75,5.75)
