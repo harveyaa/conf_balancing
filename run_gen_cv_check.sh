@@ -1,21 +1,21 @@
 #!/bin/bash
-#SBATCH --job-name=cv_check_3_40
+#SBATCH --job-name=cv_check_3_30
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=annabelle.ahrv@gmail.com
 #SBATCH --time=01:00:00
 #SBATCH --mem=5G
 #SBATCH --account=def-pbellec
 #SBATCH --array=0-4
-#SBATCH -o /home/harveyaa/projects/def-pbellec/harveyaa/slurm_output/output_3_40_%a.out
+#SBATCH -o /home/harveyaa/projects/def-pbellec/harveyaa/slurm_output/output_3_30_%a.out
 
 
 PLIM_ARRAY=(5 10 15 20 25)
-p_out_parent='/home/harveyaa/projects/def-pbellec/harveyaa/data/ids/'
+p_out_parent='/home/harveyaa/projects/def-pbellec/harveyaa/data/ids/mleming/'
 
 source /home/harveyaa/projects/def-pbellec/harveyaa/mtl_env/bin/activate
 
 plim=${PLIM_ARRAY[$SLURM_ARRAY_TASK_ID]}
-min_train=40
+min_train=30
 min_members=3
 
 p_out=$p_out_parent'cv_'$min_members'_'$min_train'_'$plim
